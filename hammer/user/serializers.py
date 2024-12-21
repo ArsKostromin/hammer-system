@@ -8,17 +8,11 @@ User = get_user_model()
 class PhoneNumberSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=15)
 
-class VerifyCodeSerializer(serializers.Serializer):
+class SMSCodeSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=15)
-    code = serializers.CharField(max_length=4)
-
-class CustomUserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CustomUser
-        fields = ['username', 'email', 'phone_number', 'invite_code', 'activated_invite_code']
-        read_only_fields = ['invite_code', 'activated_invite_code']
-
-class ProfileSerializer(serializers.ModelSerializer):
+    sms_code = serializers.CharField(max_length=4)
+        
+class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'phone_number', 'invite_code', 'activated_invite_code']
+        fields = ['username', 'phone_number', 'invite_code', 'activated_invite_code']

@@ -18,7 +18,7 @@ class CustomUser(AbstractUser):
     name = models.CharField(max_length=32, verbose_name="Имя", blank=True, null=True)
     phone_number = PhoneNumberField(help_text="Enter phone number", verbose_name='номер телефона', blank=True, null=True)
     invite_code = models.CharField(max_length=6, unique=True, default=generate_invite_code, verbose_name='инвайт код')
-    activated_invite_code = models.CharField(max_length=6, null=True, blank=True, verbose_name='активированный инвайт код')
+    activated_invite_code = models.CharField(max_length=6, null=True, blank=True, default=None, verbose_name='активированный инвайт код')
 
     def __str__(self):
         return self.username

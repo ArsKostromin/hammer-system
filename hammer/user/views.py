@@ -4,10 +4,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ValidationError
 from .models import CustomUser
-from .serializers import CustomUserSerializer, ProfileSerializer, PhoneNumberSerializer, VerifyCodeSerializer
-import random
+from .serializers import PhoneSerializer, SMSCodeSerializer, UserProfileSerializer
 import time
-from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from rest_framework.request import Request
@@ -15,10 +13,42 @@ from rest_framework.request import Request
 
 User = get_user_model()
 
-# class AuthView(APIView):
-#     def get(self, request: Request):
-        
+class RequestPhoneView(APIView):
+    '''генерация и отправка кода для подтверждения'''
+    def post(self, request: Request):
+        serializer = PhoneSerializer(data=request.data)
+        if serializer.is_valid():
+            phone_number = serializer.validated_data['phone_number']
 
+            #генерируем 4-значный код
+            sms_code = str(rando.randint(1000, 9999))
+            cache.set(f'sms_code_{phone_number}', sms_code, timeout=3000)
+
+            #имитация отправки смски
+            time.sleep(2)
+            print(f'Код для {phone_number}: {sms_code}')
+
+            return Response({'message': 'Код отправлен на ваш номер ;^)'})
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+class VerifySMSCodeView(APIView):
+    def post(self, request: Request): 
+        serializer = SMSCodeSerializer(data=request.data)
+        if serializer.is_valid():
+            phone_number = serializer.validated_data['phone_number']
+            sms_code = serializer.validated_data['sms_code']
+            
+            cached_code = cache.get(f'sms_code_{phone_number}')
+            
+            
+
+
+
+    
+    
+    
 
 # class SendCodeView(APIView):
 #     """Первый запрос: отправка 4-значного кода на указанный номер телефона."""
