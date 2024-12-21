@@ -8,7 +8,11 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 def generate_invite_code() -> str:
     """Генерация случайного 6-значного инвайт-кода (буквы и цифры)."""
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+    while True:
+        code = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+        if not CustomUser.objects.filter(invite_code=code).exists():
+            return code
+
 
 class CustomUser(AbstractUser):
     phone_number = PhoneNumberField(help_text="Enter phone number", verbose_name='номер телефона')
