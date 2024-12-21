@@ -4,3 +4,4 @@ psycopg2
 Pillow
 redis
 django-redis
+django-phonenumber-field[phonenumbers]
