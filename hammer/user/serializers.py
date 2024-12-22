@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-class PhoneNumberSerializer(serializers.Serializer):
+class PhoneSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=15)
 
 class SMSCodeSerializer(serializers.Serializer):

@@ -1,3 +1,5 @@
+import random
+import time
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -5,7 +7,6 @@ from rest_framework import status
 from django.core.exceptions import ValidationError
 from .models import CustomUser
 from .serializers import PhoneSerializer, SMSCodeSerializer, UserProfileSerializer
-import time
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from rest_framework.request import Request
@@ -21,14 +22,14 @@ class RequestPhoneView(APIView):
             phone_number = serializer.validated_data['phone_number']
 
             #генерируем 4-значный код
-            sms_code = str(rando.randint(1000, 9999))
+            sms_code = str(random.randint(1000, 9999))
             cache.set(f'sms_code_{phone_number}', sms_code, timeout=3000)
 
             #имитация отправки смски
             time.sleep(2)
             print(f'Код для {phone_number}: {sms_code}')
 
-            return Response({'message': 'Код отправлен на ваш номер ;^)'})
+            return Response({'message': f'Код отправлен на ваш номер {sms_code};^)'})
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -41,86 +42,26 @@ class VerifySMSCodeView(APIView):
             sms_code = serializer.validated_data['sms_code']
             
             cached_code = cache.get(f'sms_code_{phone_number}')
+            if cached_code is None or cached_code != sms_code:
+                return Response({'message': 'Неверный или просроченный код'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Проверяем, существует ли пользователь
+            user, created = User.objects.get_or_create(phone_number=phone_number)
+
+            return Response({
+                'message': 'Код подтвержден',
+                'user_created': created,
+                'profile_url': f'/api/profile/{user.id}/'
+            }, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
             
-
-
-
-    
-    
-    
-
-# class SendCodeView(APIView):
-#     """Первый запрос: отправка 4-значного кода на указанный номер телефона."""
-#     def post(self, request):
-#         serializer = PhoneNumberSerializer(data=request.data)
-#         if serializer.is_valid():
-#             phone_number = serializer.validated_data['phone_number']
-
-#             # Генерация 4-значного кода
-#             code = f"{random.randint(1000, 9999)}"
-#             print(code)
-
-#             # Сохраняем код в кэше с TTL 5 минут
-#             cache.set(f"auth_code_{phone_number}", code, timeout=300)
-
-#             # Имитация отправки SMS (задержка 2 секунды)
-#             time.sleep(2)
-#             print(f"Code sent to {phone_number}: {code}")
-
-#             return Response({"message": "Код отправлен!"}, status=status.HTTP_200_OK)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# class VerifyCodeView(APIView):
-#     """Второй запрос: проверка кода и создание пользователя, если он новый."""
-
-#     def post(self, request):
-#         serializer = VerifyCodeSerializer(data=request.data)
-#         if serializer.is_valid():
-#             phone_number = serializer.validated_data['phone_number']
-#             code = serializer.validated_data['code']
-
-#             # Проверка кода
-#             cached_code = cache.get(f"auth_code_{phone_number}")
-#             if cached_code != code:
-#                 return Response({"error": "Неверный или истекший код."}, status=status.HTTP_400_BAD_REQUEST)
-
-#             # Создание пользователя, если его нет
-#             user, created = User.objects.get_or_create(phone_number=phone_number, defaults={
-#                 'username': f"user_{phone_number}",
-#                 'invite_code': generate_invite_code(),
-#             })
-
-#             # Возвращаем профиль и токен
-#             return Response({
-#                 "message": "Успешная авторизация.",
-#                 "profile": ProfileSerializer(user).data
-#             }, status=status.HTTP_200_OK)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# class ProfileView(APIView):
-#     """Получение профиля пользователя."""
-
-#     def get(self, request):
-#         user = request.user
-#         if user.is_authenticated:
-#             return Response(ProfileSerializer(user).data, status=status.HTTP_200_OK)
-#         return Response({"error": "Не авторизован."}, status=status.HTTP_401_UNAUTHORIZED)
-
-
-# class ActivateInviteCodeView(APIView):
-#     def post(self, request):
-#         user = request.user
-#         invite_code = request.data.get('invite_code')
-
-#         if not invite_code:
-#             return Response({"error": "Не указан инвайт-код."}, status=status.HTTP_400_BAD_REQUEST)
-        
-#         try:
-#             user.activate_invite_code(invite_code)
-#             return Response({"message": "Инвайт-код успешно активирован."}, status=status.HTTP_200_OK)
-#         except ValidationError as e:
-#             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+class UserProfileView(APIView):
+    def get(self, request: Request, user_id):            
+            try:
+                user = User.objects.get(id=user_id)
+                Serializer = UserProfileSerializer(user)
+                return Response(Serializer.data, status=status.HTTP_200_OK)
+            except User.DoesNotExist:
+                return Response({'error': 'Пользователь не найден'}, status=status.HTTP_404_NOT_FOUND)
