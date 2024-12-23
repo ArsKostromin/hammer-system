@@ -24,9 +24,10 @@ class CustomUser(AbstractUser):
         return self.username
     
     def save(self, *args, **kwargs):
-        if not self.name:
+        if not self.username:
             super().save(*args, **kwargs)
             self.name = f'user{self.id}'
+            self.username = self.name
             super().save()
         else:
             super().save(*args, **kwargs)

@@ -4,6 +4,9 @@ FROM python:3.11-slim
 # Устанавливаем рабочую директорию
 WORKDIR /hammer
 
+# чтобы print отображался в терминале 
+ENV PYTHONUNBUFFERED=1
+
 # Устанавливаем системные зависимости
 RUN apt-get update && apt-get install -y \
     build-essential \
