@@ -15,6 +15,7 @@ class PhoneSerializer(serializers.Serializer):
         validators=[validate_password]  # Проверка сложности пароля
     )
     email = serializers.EmailField(required=False, validators=[validate_email])  # Email
+
 class SMSCodeSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=15)  # Номер телефона
     sms_code = serializers.CharField(max_length=4)       # Код из SMS
@@ -24,3 +25,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'phone_number', 'invite_code', 'activated_invite_code']
+        
+
+class PhoneLoginSerializer(serializers.Serializer):
+    phone_number = serializers.CharField(max_length=15)  # Номер телефона
+    password = serializers.CharField(
+        max_length=128, 
+        write_only=True, 
+    )
+    
+    
+class VerifyLoginCodeSerializer(serializers.Serializer):
+    sms_code = serializers.CharField(max_length=4) # Код из SMS
+    phone_number = serializers.CharField(max_length=15)  # Номер телефона

@@ -5,3 +5,4 @@ Pillow
 redis
 django-redis
 django-phonenumber-field[phonenumbers]
+djangorestframework-simplejwt
