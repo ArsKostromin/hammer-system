@@ -20,11 +20,35 @@ class SMSCodeSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=15)  # Номер телефона
     sms_code = serializers.CharField(max_length=4)       # Код из SMS
 
-        
+
 class UserProfileSerializer(serializers.ModelSerializer):
+    # Поле для отображения списка приглашенных пользователей
+    invitees = serializers.SerializerMethodField()
+    # Поле для отображения пригласившего пользователя
+    invited_by = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['username', 'phone_number', 'invite_code', 'activated_invite_code']
+        fields = [
+            'id',
+            'username',
+            'phone_number',
+            'invite_code',
+            'activated_invite_code',
+            'invitees',
+            'invited_by',
+        ]
+        read_only_fields = ['invite_code', 'invitees', 'invited_by']
+
+    def get_invitees(self, obj):
+        """Возвращает список номеров телефонов пользователей, приглашенных этим пользователем."""
+        return [invitee.phone_number.as_e164 for invitee in obj.invitees.all()]
+
+    def get_invited_by(self, obj):
+        """Возвращает номер телефона пользователя, который пригласил этого пользователя."""
+        inviter = obj.invited_by.first()
+        return inviter.phone_number.as_e164 if inviter else None
+
         
 
 class PhoneLoginSerializer(serializers.Serializer):

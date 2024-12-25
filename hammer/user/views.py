@@ -12,6 +12,8 @@ from django.core.cache import cache
 from rest_framework.request import Request
 from django.contrib.auth.hashers import make_password
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.generics import RetrieveUpdateAPIView
 
 
 User = get_user_model()
@@ -88,15 +90,38 @@ class VerifySMSCodeView(APIView):
 
             
             
-class UserProfileView(APIView):
-    def get(self, request: Request, user_id):            
+class UserProfileView(RetrieveUpdateAPIView):
+    serializer_class = UserProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+    
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        data = request.data
+        
+        # Проверяем, передан ли инвайт-код
+        invite_code = data.get('activated_invite_code') 
+        if invite_code:
+            # проеряем существует ли пользователь с таким инвайт кодом
             try:
-                user = User.objects.get(id=user_id)
-                Serializer = UserProfileSerializer(user)
-                return Response(Serializer.data, status=status.HTTP_200_OK)
+                inviter = User.objects.get(invite_code=invite_code)
             except User.DoesNotExist:
-                return Response({'error': 'Пользователь не найден'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'detail': 'Инвайт-код недействителен'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if user.activated_invite_code:
+                return Response({'detail': f'У вас уже активирован инвайт-код: {user.activated_invite_code}'}, status=status.HTTP_400_BAD_REQUEST)
             
+            # активируем код и добавляем приглашённых
+            user.activated_invite_code = invite_code
+            user.save()
+
+            inviter.invitees.add(user)
+            inviter.save()
+        
+        return super().update(request, *args, **kwargs)
+                   
             
 class RequestLoginCodeView(APIView):
     def post(self, request: Request):
@@ -163,3 +188,6 @@ class VerifyLoginCodeView(APIView):
             }, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
