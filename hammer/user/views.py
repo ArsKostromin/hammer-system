@@ -14,6 +14,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import RetrieveUpdateAPIView
+from rest_framework.viewsets import ModelViewSet
 
 
 User = get_user_model()
@@ -190,4 +191,13 @@ class VerifyLoginCodeView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
+class UsertViewSet(APIView):
+    def get(self, request):
+        queryset = User.objects.all()
+        serializer_context = {'request': request}
+        serializer_class = UserProfileSerializer(
+            instance=queryset,
+            many=True,
+            context=serializer_context
+        )
+        return Response(serializer_class.data)
